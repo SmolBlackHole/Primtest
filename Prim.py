@@ -4,7 +4,7 @@ import threading
 
 log_mode = "X" # "X" für Konsole, "Y" für Log
 
-n = int(100) # Zahl, die getestet werden soll
+n = int(42069) # Zahl, die getestet werden soll
 
 # Wenn why_not "j" braucht alles ab 20 ewig
 why_not = "n" # "j" um 2^2^n zu berechnen 
@@ -33,12 +33,11 @@ def is_prime(num):
         return False
 
     # Fermattest mit 10 zufälligen basen
-    for i in range(10):
+    for i in range(num - 1):
         base = random.randint(2, num - 1)
         result = pow(base, num - 1, num)
         if result != 1:
             return False
-
     return True
 
 def calculate_why_not():
@@ -94,20 +93,13 @@ def run_threads():
     else:
         calculate_why_not()
 
-if why_not == "n":
-    if fermat_bei_why_not == "yesplease":
-        if is_prime(n):
-            print(f"{n} ist wahrscheinlich prim")
-        else:
-            print(f"{n} ist zusammengesetzt")
-    else:
-        if log_mode == "X":
-            print(n)
-        elif log_mode == "Y":
-            with open("log.txt", "a") as f:
-                f.write(f"{n}\n")
-else:
+if why_not == "j":
     if n < 6:
         calculate_why_not()
     else:
         run_threads()
+else:
+    if is_prime(n):
+        print(f"{n} ist wahrscheinlich prim")
+    else:
+        print(f"{n} ist zusammengesetzt")
