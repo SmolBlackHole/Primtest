@@ -1,28 +1,47 @@
 import random
 import sys
 import threading
-
-log_mode = "X" # "X" für Konsole, "Y" für Log
-
-n = int(42069) # Zahl, die getestet werden soll
-
-# Wenn why_not "j" braucht alles ab 20 ewig
-why_not = "n" # "j" um 2^2^n zu berechnen 
-
-# (why_not muss für Fermattest von why_not aktiv sein) 
-# 20 ~ 1sec
-# 21 < 5sec
-# 23 > 90sec (Berechnet, zeigt aber nichts mehr an mit Konsolenlog)
-fermat_bei_why_not = "nahbro" # "yesplease" fermat bei why_not
+import multiprocessing
+import time
 
 
-#################      ab hier nichts ändern     ################# 
+#################      Konfiguration     #################
 
-# weiter unten sind die Threads einstellbar
+log_mode = "Y"  # "X" für Konsole, "Y" für Log
 
-# Eine 0 mehr schadet nicht (bringt aber nichts)
-# (Berechnung braucht ewig je größer n mit why_not "j")
+n = int(23)  # Zahl, die getestet werden soll
+
+why_not = "j"  # "j" um 2^2^n zu berechnen
+
+# Ab 23 wird why_not nicht mehr in der Konsole dargestellt, test läuft aber
+# 20 < 1sec | 21 < 5sec | 22 ~ 20sec | 23 > 80sec 
+fermat_bei_why_not = "yesplease"  # "yesplease" fermat bei why_not
+
+
+# HINWEIS: OHNE FERMAT TESTEN (DAUERT EWIG)
+# Bei zu großen Zahlen (mit why_not aktiv) wird die Zahl zu groß.
+# Gerne eine 0 mehr einfügen, dadurch wird die größe 
+# zumindest ein wenig umgangen
+
+#Standard 8300
 sys.set_int_max_str_digits(15000000)
+
+#################      ab hier nichts ändern     #################
+
+if log_mode == "Y":
+    with open('log.txt', 'w') as f:
+        f.write('')
+
+def calculate_time(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        total_time = end_time - start_time
+        print(f"Die Berechnung hat {total_time:.4f} Sekunden gedauert.")
+        return result
+    return wrapper
+
 
 def is_prime(num):
     if num < 2:
@@ -32,7 +51,6 @@ def is_prime(num):
     if num % 2 == 0:
         return False
 
-    # Fermattest mit 10 zufälligen basen
     for i in range(num - 1):
         base = random.randint(2, num - 1)
         result = pow(base, num - 1, num)
@@ -40,38 +58,45 @@ def is_prime(num):
             return False
     return True
 
+
 def calculate_why_not():
     result = pow(2, pow(2, n))
     if fermat_bei_why_not == "yesplease":
         if is_prime(result):
-            print(f"{result} ist wahrscheinlich prim")
+            output_str = f"{result}\nist wahrscheinlich prim"
         else:
-            print(f"{result} ist zusammengesetzt")
+            output_str = f"{result}\nist zusammengesetzt"
     else:
-        if log_mode == "X":
-            print(result)
-        elif log_mode == "Y":
-            with open("log.txt", "a") as f:
-                f.write(f"{result}\n")
+        output_str = str(result)
 
-def why_not_thread(start, end):
+    if log_mode == "X":
+        print(output_str)
+    elif log_mode == "Y":
+        with open("log.txt", "a") as f:
+            f.write(f"{output_str}\n")
+
+
+def why_not_thread(start, end, thread_results):
     for i in range(start, end):
         result = pow(2, pow(2, i))
         if is_prime(result):
             thread_results.append(result)
             break
 
+
+@calculate_time
 def run_threads():
     global thread_results
     thread_results = []
     threads = []
-
-    # Standard 4
-    chunk_size = (6 - n) // 4
+    num_threads = multiprocessing.cpu_count()
+    chunk_size = (6 - n) // num_threads
     if chunk_size == 0:
         chunk_size = 1
-    for i in range(n+1, 6, chunk_size):
-        t = threading.Thread(target=why_not_thread, args=(i, i+chunk_size))
+    for i in range(n + 1, 6, chunk_size):
+        t = threading.Thread(
+            target=why_not_thread, args=(i, i + chunk_size, thread_results)
+        )
         t.start()
         threads.append(t)
     for t in threads:
@@ -92,6 +117,7 @@ def run_threads():
                     f.write(f"{result}\n")
     else:
         calculate_why_not()
+
 
 if why_not == "j":
     if n < 6:
